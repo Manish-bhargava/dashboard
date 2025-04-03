@@ -1,7 +1,7 @@
 import * as React from "react"
 import PropTypes from "prop-types"
 
-const SidebarContext = React.createContext()
+const SidebarContext = React.createContext(null)
 
 export function useSidebar() {
   const context = React.useContext(SidebarContext)
@@ -11,10 +11,13 @@ export function useSidebar() {
   return context
 }
 
-export function SidebarProvider({ children, defaultOpen = false }) {
+export function SidebarProvider({ children, defaultOpen = true }) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen)
 
-  const value = React.useMemo(() => ({ isOpen, setIsOpen }), [isOpen])
+  const value = React.useMemo(() => ({
+    isOpen,
+    setIsOpen
+  }), [isOpen])
 
   return (
     <SidebarContext.Provider value={value}>

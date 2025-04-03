@@ -6,19 +6,36 @@ const Sidebar = React.forwardRef(({ className, children, ...props }, ref) => {
   const { isOpen } = useSidebar()
 
   return (
-    <aside
-      ref={ref}
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background",
-        "transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:translate-x-0 lg:static",
-        className
+    <>
+      {/* Backdrop - only on mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/20 lg:hidden" 
+          aria-hidden="true"
+        />
       )}
-      {...props}
-    >
-      {children}
-    </aside>
+      
+      {/* Sidebar */}
+      <aside
+        ref={ref}
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background",
+          "transition-all duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          "lg:relative lg:translate-x-0",
+          !isOpen && "lg:w-0 lg:opacity-0 lg:border-0",
+          className
+        )}
+        {...props}
+      >
+        <div className={cn(
+          "h-full w-full",
+          !isOpen && "lg:hidden"
+        )}>
+          {children}
+        </div>
+      </aside>
+    </>
   )
 })
 Sidebar.displayName = "Sidebar"
@@ -26,7 +43,7 @@ Sidebar.displayName = "Sidebar"
 export { Sidebar }
 
 export function SidebarHeader({ className, children }) {
-  return <div className={cn("flex-none", className)}>{children}</div>
+  return <div className={cn("flex-none border-b", className)}>{children}</div>
 }
 
 export function SidebarContent({ className, children }) {
@@ -34,27 +51,5 @@ export function SidebarContent({ className, children }) {
 }
 
 export function SidebarFooter({ className, children }) {
-  return <div className={cn("flex-none", className)}>{children}</div>
-}
-
-export function SidebarTrigger({ className }) {
-  const { isOpen, setIsOpen } = useSidebar()
-
-  return (
-    <button
-      className={cn("p-2 hover:bg-gray-100 rounded-md", className)}
-      onClick={() => setIsOpen(!isOpen)}
-      aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
-    >
-      <svg
-        className="h-6 w-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  )
+  return <div className={cn("flex-none border-t", className)}>{children}</div>
 } 

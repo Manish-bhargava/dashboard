@@ -26,6 +26,7 @@ import {
 } from "recharts"
 import { Activity, BarChart2, PieChart, Map, Circle, ChevronDown, CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
+import { cn } from "./lib/utils"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
 import { Button } from "./components/ui/button"
@@ -39,18 +40,10 @@ import { ScrollArea } from "./components/ui/scroll-area"
 import { Checkbox } from "./components/ui/checkbox"
 import { Calendar } from "./components/ui/calendar"
 
-import { SidebarProvider } from "./components/sidebar/sidebar-provider"
-import { Sidebar } from "./components/sidebar/sidebar"
-import { SidebarHeader } from "./components/sidebar/sidebar-header"
-import { SidebarContent } from "./components/sidebar/sidebar-content"
-import { SidebarFooter } from "./components/sidebar/sidebar-footer"
-import { SidebarTrigger } from "./components/sidebar/sidebar-trigger"
-import { SidebarMenu } from "./components/sidebar/sidebar-menu"
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from "./components/sidebar"
 import { SidebarMenuItem } from "./components/sidebar/sidebar-menu-item"
 import { SidebarMenuButton } from "./components/sidebar/sidebar-menu-button"
-import { SidebarGroup } from "./components/sidebar/sidebar-group"
-import { SidebarGroupLabel } from "./components/sidebar/sidebar-group-label"
-import { SidebarGroupContent } from "./components/sidebar/sidebar-group-content"
+import { useSidebar } from "./components/sidebar/sidebar-provider"
 
 // Sample data
 const competencyData = [
@@ -248,7 +241,14 @@ function MultiSelect({ options, value, onChange, placeholder, showCheckAll = fal
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" className="w-full justify-between">
+        <Button 
+          variant="outline" 
+          role="combobox" 
+          className={cn(
+            "w-full justify-between",
+            value.length > 0 && "border-primary"
+          )}
+        >
           {value.length > 0 ? (
             <div className="flex flex-wrap gap-1 max-w-[90%] overflow-hidden">
               {value.length <= 2 ? (
@@ -286,8 +286,15 @@ function MultiSelect({ options, value, onChange, placeholder, showCheckAll = fal
               )}
               <ScrollArea className="h-[200px]">
                 {options.map((option) => (
-                  <CommandItem key={option} onSelect={() => handleSelect(option)} className="flex items-center gap-2">
-                    <Checkbox checked={value.includes(option)} onCheckedChange={() => handleSelect(option)} />
+                  <CommandItem 
+                    key={option} 
+                    onSelect={() => handleSelect(option)} 
+                    className="flex items-center gap-2"
+                  >
+                    <Checkbox 
+                      checked={value.includes(option)} 
+                      onCheckedChange={() => handleSelect(option)}
+                    />
                     {option}
                   </CommandItem>
                 ))}
@@ -1030,224 +1037,246 @@ function TopPerformersTable() {
   )
 }
 
-// Main Dashboard Component
-export default function Dashboard() {
+// DashboardContent component that uses useSidebar
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState("radar")
   const [selectedRegions, setSelectedRegions] = useState([])
   const [selectedUnits, setSelectedUnits] = useState([])
-
-  // Date picker state
-  const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // 30 days ago
-  const [endDate, setEndDate] = useState(new Date())
+  const [startDate, setStartDate] = useState(() => new Date())
+  const [endDate, setEndDate] = useState(() => new Date())
   const [isStartDateOpen, setIsStartDateOpen] = useState(false)
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
+  const { isOpen } = useSidebar()
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen bg-gray-50">
-        {/* Sidebar */}
-        <Sidebar>
-          <SidebarHeader className="border-b">
-            <div className="flex items-center p-4">
-              <div className="flex items-center gap-2">
-                <Activity className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">Bodhi Labs</h1>
-              </div>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold">Bodhi Labs</h1>
             </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Charts</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "radar"} onClick={() => setActiveTab("radar")}>
-                      <Activity />
-                      <span>Radar Chart</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "bar"} onClick={() => setActiveTab("bar")}>
-                      <BarChart2 />
-                      <span>Box Graph</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "heat"} onClick={() => setActiveTab("heat")}>
-                      <PieChart />
-                      <span>Heat Map</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "talent"} onClick={() => setActiveTab("talent")}>
-                      <Map />
-                      <span>Talent Distribution</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "bubble"} onClick={() => setActiveTab("bubble")}>
-                      <Circle />
-                      <span>Bubble Plot</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter className="border-t p-4">
+            <SidebarTrigger />
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="px-4 py-2">
+          <SidebarGroup>
+            <SidebarGroupLabel>Charts</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeTab === "radar"} onClick={() => setActiveTab("radar")}>
+                  <Activity />
+                  <span>Radar Chart</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeTab === "bar"} onClick={() => setActiveTab("bar")}>
+                  <BarChart2 />
+                  <span>Box Graph</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeTab === "heat"} onClick={() => setActiveTab("heat")}>
+                  <PieChart />
+                  <span>Heat Map</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeTab === "talent"} onClick={() => setActiveTab("talent")}>
+                  <Map />
+                  <span>Talent Distribution</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={activeTab === "bubble"} onClick={() => setActiveTab("bubble")}>
+                  <Circle />
+                  <span>Bubble Plot</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="p-4">
             <div className="text-xs text-gray-500">© 2025 Bodhi Labs</div>
-          </SidebarFooter>
-        </Sidebar>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top Bar with Common Filters */}
-          <header className="bg-white border-b p-4">
-            <div className="flex justify-between items-center">
-              <SidebarTrigger />
-              <h1 className="text-xl font-bold">Performance Dashboard</h1>
-              <div></div> {/* Empty div for alignment */}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Top Bar with Common Filters */}
+        <header className="sticky top-0 z-10 bg-white border-b p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              {!isOpen && (
+                <div className="absolute left-4 top-4 z-50">
+                  <SidebarTrigger />
+                </div>
+              )}
+              <h1 className="text-xl font-bold ml-12">Performance Dashboard</h1>
+            </div>
+          </div>
+
+          {/* Common Filters - Region, Unit, and Date Range */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="region-select" className="mb-2 block">
+                Region
+              </Label>
+              <MultiSelect
+                options={regions}
+                value={selectedRegions}
+                onChange={setSelectedRegions}
+                placeholder="Select Regions"
+                showCheckAll={true}
+              />
+            </div>
+            <div>
+              <Label htmlFor="unit-select" className="mb-2 block">
+                Unit
+              </Label>
+              <MultiSelect
+                options={units}
+                value={selectedUnits}
+                onChange={setSelectedUnits}
+                placeholder="Select Units"
+                showCheckAll={true}
+              />
+            </div>
+            <div>
+              <Label htmlFor="start-date" className="mb-2 block">
+                Start Date
+              </Label>
+              <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => {
+                      setStartDate(date)
+                      setIsStartDateOpen(false)
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label htmlFor="end-date" className="mb-2 block">
+                End Date
+              </Label>
+              <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => {
+                      setEndDate(date)
+                      setIsEndDateOpen(false)
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Dashboard Content */}
+        <main className="flex-1 overflow-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Chart Area - Takes 2/3 of the space on large screens */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {activeTab === "radar" && "Radar Chart"}
+                    {activeTab === "bar" && "Box Graph"}
+                    {activeTab === "heat" && "Heat Map"}
+                    {activeTab === "talent" && "Talent Distribution"}
+                    {activeTab === "bubble" && "Bubble Plot"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[400px] flex items-center justify-center">
+                    <p className="text-muted-foreground">Chart component will be implemented here</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Common Filters - Region, Unit, and Date Range */}
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="region-select" className="mb-2 block">
-                  Region
-                </Label>
-                <MultiSelect
-                  options={regions}
-                  value={selectedRegions}
-                  onChange={setSelectedRegions}
-                  placeholder="Select Regions"
-                  showCheckAll={true}
-                />
-              </div>
-              <div>
-                <Label htmlFor="unit-select" className="mb-2 block">
-                  Unit
-                </Label>
-                <MultiSelect
-                  options={units}
-                  value={selectedUnits}
-                  onChange={setSelectedUnits}
-                  placeholder="Select Units"
-                  showCheckAll={true}
-                />
-              </div>
-              <div>
-                <Label htmlFor="start-date" className="mb-2 block">
-                  Start Date
-                </Label>
-                <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={(date) => {
-                        setStartDate(date)
-                        setIsStartDateOpen(false)
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label htmlFor="end-date" className="mb-2 block">
-                  End Date
-                </Label>
-                <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={(date) => {
-                        setEndDate(date)
-                        setIsEndDateOpen(false)
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </header>
+            {/* Top Performers Table - Takes 1/3 of the space on large screens */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Performers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[400px] flex items-center justify-center">
+                    <p className="text-muted-foreground">Top performers table will be implemented here</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Main Dashboard Content */}
-          <main className="flex-1 overflow-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Chart Area - Takes 2/3 of the space on large screens */}
-              <div className="lg:col-span-2">
-                {activeTab === "radar" && (
-                  <RadarChartView selectedRegions={selectedRegions} selectedUnits={selectedUnits} />
-                )}
-                {activeTab === "bar" && (
-                  <GroupedBarChart selectedRegions={selectedRegions} selectedUnits={selectedUnits} />
-                )}
-                {activeTab === "heat" && (
-                  <HeatMapChart selectedRegions={selectedRegions} selectedUnits={selectedUnits} />
-                )}
-                {activeTab === "talent" && (
-                  <TalentDistribution selectedRegions={selectedRegions} selectedUnits={selectedUnits} />
-                )}
-                {activeTab === "bubble" && (
-                  <BubbleMatrixPlot selectedRegions={selectedRegions} selectedUnits={selectedUnits} />
-                )}
-              </div>
-
-              {/* Top Performers Table - Takes 1/3 of the space on large screens */}
-              <div>
-                <TopPerformersTable />
-
-                {/* Dashboard Info Card */}
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Dashboard Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium">Current View</h3>
-                        <p className="text-sm text-gray-500">
-                          {activeTab === "radar" && "Radar Chart showing competency distribution across units"}
-                          {activeTab === "bar" && "Bar Chart comparing unit performance across competencies"}
-                          {activeTab === "heat" && "Heat Map displaying performance scores by unit and competency"}
-                          {activeTab === "talent" && "Talent Distribution showing performance and growth potential"}
-                          {activeTab === "bubble" &&
-                            "Bubble Plot visualizing performance with staff count representation"}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium">Selected Filters</h3>
-                        <ul className="text-sm text-gray-500 list-disc list-inside">
-                          <li>Regions: {selectedRegions.length > 0 ? selectedRegions.join(", ") : "None Selected"}</li>
-                          <li>Units: {selectedUnits.length > 0 ? selectedUnits.join(", ") : "None Selected"}</li>
-                          <li>
-                            Date Range: {format(startDate, "MMM d, yyyy")} - {format(endDate, "MMM d, yyyy")}
-                          </li>
-                        </ul>
-                      </div>
+              {/* Dashboard Info Card */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Dashboard Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-medium">Current View</h3>
+                      <p className="text-sm text-gray-500">
+                        {activeTab === "radar" && "Radar Chart showing competency distribution across units"}
+                        {activeTab === "bar" && "Bar Chart comparing unit performance across competencies"}
+                        {activeTab === "heat" && "Heat Map displaying performance scores by unit and competency"}
+                        {activeTab === "talent" && "Talent Distribution showing performance and growth potential"}
+                        {activeTab === "bubble" &&
+                          "Bubble Plot visualizing performance with staff count representation"}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    <div>
+                      <h3 className="font-medium">Selected Filters</h3>
+                      <ul className="text-sm text-gray-500 list-disc list-inside">
+                        <li>Regions: {selectedRegions.length > 0 ? selectedRegions.join(", ") : "None Selected"}</li>
+                        <li>Units: {selectedUnits.length > 0 ? selectedUnits.join(", ") : "None Selected"}</li>
+                        <li>
+                          Date Range: {format(startDate, "MMM d, yyyy")} - {format(endDate, "MMM d, yyyy")}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
+    </div>
+  )
+}
+
+// Main Dashboard component
+export default function Dashboard() {
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <DashboardContent />
     </SidebarProvider>
   )
 }
